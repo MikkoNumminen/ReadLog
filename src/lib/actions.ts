@@ -4,9 +4,46 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { Format } from "@/generated/prisma/client";
 import { searchBooks, BookSearchResult } from "@/lib/openlibrary";
+import { searchGoogleBooks } from "@/lib/googlebooks";
+
+function normalize(str: string): string {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function deduplicateResults(results: BookSearchResult[]): BookSearchResult[] {
+  const seen = new Map<string, BookSearchResult>();
+
+  for (const book of results) {
+    const key = normalize(book.title) + "|" + normalize(book.author ?? "");
+    const existing = seen.get(key);
+
+    if (!existing) {
+      seen.set(key, book);
+    } else {
+      // Prefer the result with more data (cover, page count)
+      const existingScore = (existing.coverUrl ? 1 : 0) + (existing.pageCount ? 1 : 0);
+      const newScore = (book.coverUrl ? 1 : 0) + (book.pageCount ? 1 : 0);
+      if (newScore > existingScore) {
+        seen.set(key, book);
+      }
+    }
+  }
+
+  return Array.from(seen.values());
+}
 
 export async function searchBooksAction(query: string): Promise<BookSearchResult[]> {
-  return searchBooks(query);
+  const [openLibraryResults, googleResults] = await Promise.allSettled([
+    searchBooks(query),
+    searchGoogleBooks(query),
+  ]);
+
+  const allResults: BookSearchResult[] = [
+    ...(openLibraryResults.status === "fulfilled" ? openLibraryResults.value : []),
+    ...(googleResults.status === "fulfilled" ? googleResults.value : []),
+  ];
+
+  return deduplicateResults(allResults);
 }
 
 export async function logBook(
@@ -78,6 +115,5 @@ export async function getRecentPublicReads() {
     take: 20,
     orderBy: { createdAt: "desc" },
     include: { book: true },
-    // No user data exposed — anonymous feed
   });
 }
