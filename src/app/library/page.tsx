@@ -23,7 +23,7 @@ export default async function LibraryPage() {
   }));
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       <Typography variant="h4" component="h1" gutterBottom>
         My Library
       </Typography>

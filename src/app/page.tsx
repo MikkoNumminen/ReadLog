@@ -17,7 +17,7 @@ export default async function Home() {
   }));
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Recently Read
       </Typography>
