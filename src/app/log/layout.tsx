@@ -3,6 +3,6 @@ import { auth } from "@/lib/auth";
 
 export default async function LogLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  if (!session?.user) redirect("/api/auth/signin");
+  if (!session?.user) redirect("/signin?callbackUrl=/log");
   return <>{children}</>;
 }

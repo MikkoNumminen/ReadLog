@@ -14,10 +14,10 @@ const formatLabels: Record<string, { label: string; icon: React.ReactElement }> 
 
 export default async function AccountPage() {
   const session = await auth();
-  if (!session?.user) redirect("/api/auth/signin");
+  if (!session?.user) redirect("/signin?callbackUrl=/account");
 
   const stats = await getAccountStats();
-  if (!stats) redirect("/api/auth/signin");
+  if (!stats) redirect("/signin?callbackUrl=/account");
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>

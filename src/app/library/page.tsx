@@ -7,7 +7,7 @@ import LibraryView from "@/components/LibraryView";
 
 export default async function LibraryPage() {
   const session = await auth();
-  if (!session?.user) redirect("/api/auth/signin");
+  if (!session?.user) redirect("/signin?callbackUrl=/library");
 
   const entries = await getMyBooks();
 
