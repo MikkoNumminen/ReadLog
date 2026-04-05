@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// NextAuth models
+// NextAuth models — prefixed to avoid conflicts with other apps sharing the database
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -25,6 +25,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@map("readlog_account")
 }
 
 model Session {
@@ -34,6 +35,8 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("readlog_session")
 }
 
 model VerificationToken {
@@ -42,9 +45,9 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@map("readlog_verification_token")
 }
 
-// App models
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -54,35 +57,39 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts   Account[]
-  sessions   Session[]
+  accounts    Account[]
+  sessions    Session[]
   readEntries ReadEntry[]
+
+  @@map("readlog_user")
 }
 
+// App models
 model Book {
-  id            String   @id @default(cuid())
-  title         String
-  author        String?
-  coverUrl      String?
-  openLibraryId String?  @unique
-  pageCount     Int?
+  id               String   @id @default(cuid())
+  title            String
+  author           String?
+  coverUrl         String?
+  openLibraryId    String?  @unique
+  pageCount        Int?
   firstPublishYear Int?
-  createdAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
 
   readEntries ReadEntry[]
 
   @@index([title])
+  @@map("readlog_book")
 }
 
 model ReadEntry {
-  id        String   @id @default(cuid())
-  userId    String
-  bookId    String
-  format    Format   @default(BOOK)
+  id         String   @id @default(cuid())
+  userId     String
+  bookId     String
+  format     Format   @default(BOOK)
   finishedAt DateTime @default(now())
-  rating    Int?
-  notes     String?  @db.Text
-  createdAt DateTime @default(now())
+  rating     Int?
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   book Book @relation(fields: [bookId], references: [id])
@@ -90,10 +97,13 @@ model ReadEntry {
   @@unique([userId, bookId, finishedAt])
   @@index([userId])
   @@index([finishedAt])
+  @@map("readlog_entry")
 }
 
 enum Format {
   BOOK
   AUDIOBOOK
   EBOOK
+
+  @@map("readlog_format")
 }
