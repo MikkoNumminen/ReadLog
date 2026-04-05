@@ -110,6 +110,38 @@ export async function checkIfRead(query: string) {
   });
 }
 
+export async function updateReadEntry(
+  entryId: string,
+  data: { title?: string; format?: Format; finishedAt?: string },
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  const entry = await prisma.readEntry.findUnique({
+    where: { id: entryId },
+  });
+  if (!entry || entry.userId !== session.user.id) throw new Error("Not found");
+
+  if (data.title) {
+    await prisma.book.update({
+      where: { id: entry.bookId },
+      data: { title: data.title },
+    });
+  }
+
+  if (data.format || data.finishedAt) {
+    await prisma.readEntry.update({
+      where: { id: entryId },
+      data: {
+        ...(data.format && { format: data.format }),
+        ...(data.finishedAt && { finishedAt: new Date(data.finishedAt) }),
+      },
+    });
+  }
+
+  return { success: true };
+}
+
 export async function getRecentPublicReads() {
   return prisma.readEntry.findMany({
     take: 20,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -11,12 +12,22 @@ import {
   IconButton,
   Tooltip,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import TabletIcon from "@mui/icons-material/Tablet";
+import EditIcon from "@mui/icons-material/Edit";
+import { updateReadEntry } from "@/lib/actions";
 
 const formatIcons = {
   BOOK: <MenuBookIcon fontSize="small" />,
@@ -24,9 +35,11 @@ const formatIcons = {
   EBOOK: <TabletIcon fontSize="small" />,
 };
 
+type FormatType = "BOOK" | "AUDIOBOOK" | "EBOOK";
+
 interface ReadEntry {
   id: string;
-  format: "BOOK" | "AUDIOBOOK" | "EBOOK";
+  format: FormatType;
   finishedAt: Date;
   book: {
     title: string;
@@ -37,6 +50,7 @@ interface ReadEntry {
 
 export default function LibraryView({ entries }: { entries: ReadEntry[] }) {
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [editing, setEditing] = useState<ReadEntry | null>(null);
 
   return (
     <Box>
@@ -61,12 +75,24 @@ export default function LibraryView({ entries }: { entries: ReadEntry[] }) {
         </Tooltip>
       </Box>
 
-      {view === "grid" ? <GridView entries={entries} /> : <ListView entries={entries} />}
+      {view === "grid" ? (
+        <GridView entries={entries} onEdit={setEditing} />
+      ) : (
+        <ListView entries={entries} onEdit={setEditing} />
+      )}
+
+      {editing && <EditDialog entry={editing} onClose={() => setEditing(null)} />}
     </Box>
   );
 }
 
-function GridView({ entries }: { entries: ReadEntry[] }) {
+function GridView({
+  entries,
+  onEdit,
+}: {
+  entries: ReadEntry[];
+  onEdit: (entry: ReadEntry) => void;
+}) {
   return (
     <Box
       sx={{
@@ -80,7 +106,11 @@ function GridView({ entries }: { entries: ReadEntry[] }) {
       }}
     >
       {entries.map((entry) => (
-        <Box key={entry.id} sx={{ textAlign: "center" }}>
+        <Box
+          key={entry.id}
+          sx={{ textAlign: "center", cursor: "pointer" }}
+          onClick={() => onEdit(entry)}
+        >
           {entry.book.coverUrl ? (
             <Box
               component="img"
@@ -143,7 +173,13 @@ function GridView({ entries }: { entries: ReadEntry[] }) {
   );
 }
 
-function ListView({ entries }: { entries: ReadEntry[] }) {
+function ListView({
+  entries,
+  onEdit,
+}: {
+  entries: ReadEntry[];
+  onEdit: (entry: ReadEntry) => void;
+}) {
   return (
     <Stack spacing={0.5}>
       {entries.map((entry) => (
@@ -203,10 +239,91 @@ function ListView({ entries }: { entries: ReadEntry[] }) {
               <Typography variant="caption" color="text.secondary" noWrap>
                 {new Date(entry.finishedAt).toLocaleDateString()}
               </Typography>
+              <IconButton size="small" onClick={() => onEdit(entry)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
             </Box>
           </CardContent>
         </Card>
       ))}
     </Stack>
+  );
+}
+
+function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void }) {
+  const router = useRouter();
+  const [title, setTitle] = useState(entry.book.title);
+  const [format, setFormat] = useState<FormatType>(entry.format);
+  const [finishedAt, setFinishedAt] = useState(
+    new Date(entry.finishedAt).toISOString().split("T")[0],
+  );
+  const [saving, setSaving] = useState(false);
+
+  const hasChanges =
+    title !== entry.book.title ||
+    format !== entry.format ||
+    finishedAt !== new Date(entry.finishedAt).toISOString().split("T")[0];
+
+  const handleSave = async () => {
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
+    setSaving(true);
+    await updateReadEntry(entry.id, {
+      ...(title !== entry.book.title && { title }),
+      ...(format !== entry.format && { format }),
+      ...(finishedAt !== new Date(entry.finishedAt).toISOString().split("T")[0] && { finishedAt }),
+    });
+    router.refresh();
+    onClose();
+  };
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Edit entry</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          fullWidth
+          sx={{ mt: 1, mb: 2 }}
+        />
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Format
+        </Typography>
+        <ToggleButtonGroup
+          value={format}
+          exclusive
+          onChange={(_, v) => v && setFormat(v)}
+          fullWidth
+          sx={{ mb: 2 }}
+        >
+          <ToggleButton value="BOOK">
+            <MenuBookIcon sx={{ mr: 0.5 }} fontSize="small" /> Book
+          </ToggleButton>
+          <ToggleButton value="AUDIOBOOK">
+            <HeadphonesIcon sx={{ mr: 0.5 }} fontSize="small" /> Audiobook
+          </ToggleButton>
+          <ToggleButton value="EBOOK">
+            <TabletIcon sx={{ mr: 0.5 }} fontSize="small" /> E-book
+          </ToggleButton>
+        </ToggleButtonGroup>
+        <TextField
+          label="Finished on"
+          type="date"
+          value={finishedAt}
+          onChange={(e) => setFinishedAt(e.target.value)}
+          fullWidth
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained" disabled={saving || !hasChanges}>
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
