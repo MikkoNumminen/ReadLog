@@ -79,9 +79,27 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
       </Stack>
 
       {searched && results.length === 0 && !loading && (
-        <Typography sx={{ mt: 2 }} color="text.secondary">
-          No books found.
-        </Typography>
+        <Box sx={{ mt: 2 }}>
+          <Typography color="text.secondary" gutterBottom>
+            No books found.
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() =>
+              onSelect({
+                openLibraryId: `manual:${Date.now()}`,
+                title: title.trim(),
+                subtitle: null,
+                author: author.trim() || null,
+                firstPublishYear: null,
+                pageCount: null,
+                coverUrl: null,
+              })
+            }
+          >
+            Add &quot;{title.trim()}&quot; manually
+          </Button>
+        </Box>
       )}
 
       <List>

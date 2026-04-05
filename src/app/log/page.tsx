@@ -26,6 +26,7 @@ export default function LogBookPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<BookSearchResult | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
+  const [editedAuthor, setEditedAuthor] = useState("");
   const [format, setFormat] = useState<"BOOK" | "AUDIOBOOK" | "EBOOK">("BOOK");
   const [finishedAt, setFinishedAt] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
@@ -39,7 +40,7 @@ export default function LogBookPage() {
       await logBook(
         selected.openLibraryId,
         editedTitle || selected.title,
-        selected.author,
+        editedAuthor || selected.author,
         selected.coverUrl,
         selected.pageCount,
         selected.firstPublishYear,
@@ -65,6 +66,7 @@ export default function LogBookPage() {
           onSelect={(book) => {
             setSelected(book);
             setEditedTitle(book.title);
+            setEditedAuthor(book.author ?? "");
           }}
         />
       ) : (
@@ -88,7 +90,16 @@ export default function LogBookPage() {
                   input: { sx: { fontSize: "1.25rem", fontWeight: 500 } },
                 }}
               />
-              <Typography color="text.secondary">{selected.author}</Typography>
+              <TextField
+                value={editedAuthor}
+                onChange={(e) => setEditedAuthor(e.target.value)}
+                variant="standard"
+                fullWidth
+                placeholder="Author"
+                slotProps={{
+                  input: { sx: { fontSize: "0.875rem", color: "text.secondary" } },
+                }}
+              />
               {selected.firstPublishYear && (
                 <Typography variant="body2" color="text.secondary">
                   {selected.firstPublishYear}
