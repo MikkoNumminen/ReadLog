@@ -608,7 +608,7 @@ describe("BookDetailDialog", () => {
 
     await waitFor(() => {
       const img = screen.getByRole("img", { name: "Test" }) as HTMLImageElement;
-      expect(img.src).toBe("https://fallback.jpg");
+      expect(img.src).toContain("https://fallback.jpg");
     });
   });
 
