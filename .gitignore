@@ -2,12 +2,13 @@ node_modules
 .turbo
 dist
 .next
-.env
-.env.local
-.env.*-backup
+.env*
+!.env.example
 .claude/
 CLAUDE.md
 TODO.md
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+/src/generated/prisma
