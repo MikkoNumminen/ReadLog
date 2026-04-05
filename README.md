@@ -29,6 +29,13 @@ npx prisma db push      # or run migration SQL manually for shared databases
 npm run dev
 ```
 
+## External APIs
+
+- **Open Library** — book search by title/author, no API key required
+- **Google Books** — secondary search source, requires `GOOGLE_BOOKS_API_KEY`
+
+Results from both APIs are searched in parallel and deduplicated.
+
 ## Environment variables
 
 See [.env.example](.env.example) for all required variables.
