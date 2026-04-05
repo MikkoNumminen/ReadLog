@@ -39,7 +39,11 @@ export default function NavBar() {
               >
                 My Library
               </Button>
-              <Button color="inherit" onClick={() => signOut()} startIcon={<LogoutIcon />}>
+              <Button
+                color="inherit"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                startIcon={<LogoutIcon />}
+              >
                 Sign out
               </Button>
             </>
