@@ -5,7 +5,13 @@
 jest.mock("@/lib/db", () => ({
   prisma: {
     book: { upsert: jest.fn(), update: jest.fn() },
-    readEntry: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    readEntry: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
   },
 }));
 
@@ -32,6 +38,7 @@ import {
   checkIfRead,
   getRecentPublicReads,
   updateReadEntry,
+  deleteReadEntry,
 } from "@/lib/actions";
 
 const mockAuth = auth as unknown as jest.MockedFunction<() => Promise<unknown>>;
@@ -43,6 +50,7 @@ const mockEntryCreate = prisma.readEntry.create as jest.Mock;
 const mockEntryFindMany = prisma.readEntry.findMany as jest.Mock;
 const mockEntryFindUnique = prisma.readEntry.findUnique as jest.Mock;
 const mockEntryUpdate = prisma.readEntry.update as jest.Mock;
+const mockEntryDelete = prisma.readEntry.delete as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -293,6 +301,40 @@ describe("updateReadEntry", () => {
     mockAuth.mockResolvedValueOnce(authedSession);
     mockEntryFindUnique.mockResolvedValueOnce({ id: "e1", userId: "other", bookId: "b1" });
     await expect(updateReadEntry("e1", { title: "X" })).rejects.toThrow("Not found");
+  });
+});
+
+describe("deleteReadEntry", () => {
+  const authedSession = {
+    user: { id: "user1", name: "Test", email: "t@t.com" },
+    expires: "",
+  };
+
+  it("deletes entry owned by authenticated user", async () => {
+    mockAuth.mockResolvedValueOnce(authedSession);
+    mockEntryFindUnique.mockResolvedValueOnce({ id: "e1", userId: "user1", bookId: "b1" });
+    mockEntryDelete.mockResolvedValueOnce({});
+
+    const result = await deleteReadEntry("e1");
+    expect(result).toEqual({ success: true });
+    expect(mockEntryDelete).toHaveBeenCalledWith({ where: { id: "e1" } });
+  });
+
+  it("throws when not authenticated", async () => {
+    mockAuth.mockResolvedValueOnce(null);
+    await expect(deleteReadEntry("e1")).rejects.toThrow("Not authenticated");
+  });
+
+  it("throws when entry not found", async () => {
+    mockAuth.mockResolvedValueOnce(authedSession);
+    mockEntryFindUnique.mockResolvedValueOnce(null);
+    await expect(deleteReadEntry("e1")).rejects.toThrow("Not found");
+  });
+
+  it("throws when entry belongs to another user", async () => {
+    mockAuth.mockResolvedValueOnce(authedSession);
+    mockEntryFindUnique.mockResolvedValueOnce({ id: "e1", userId: "other", bookId: "b1" });
+    await expect(deleteReadEntry("e1")).rejects.toThrow("Not found");
   });
 });
 
