@@ -1,26 +1,20 @@
-import {
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  CardMedia,
-  Stack,
-  Chip,
-  Box,
-} from "@mui/material";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import HeadphonesIcon from "@mui/icons-material/Headphones";
-import TabletIcon from "@mui/icons-material/Tablet";
+import { Container, Typography } from "@mui/material";
 import { getRecentPublicReads } from "@/lib/actions";
-
-const formatIcons = {
-  BOOK: <MenuBookIcon fontSize="small" />,
-  AUDIOBOOK: <HeadphonesIcon fontSize="small" />,
-  EBOOK: <TabletIcon fontSize="small" />,
-};
+import FeedList from "@/components/FeedList";
 
 export default async function Home() {
   const recentReads = await getRecentPublicReads();
+
+  const entries = recentReads.map((entry) => ({
+    id: entry.id,
+    format: entry.format,
+    createdAt: entry.createdAt.toISOString(),
+    book: {
+      title: entry.book.title,
+      author: entry.book.author,
+      coverUrl: entry.book.coverUrl,
+    },
+  }));
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
@@ -31,58 +25,12 @@ export default async function Home() {
         See what people are reading.
       </Typography>
 
-      {recentReads.length === 0 ? (
+      {entries.length === 0 ? (
         <Typography color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
           No books logged yet. Be the first!
         </Typography>
       ) : (
-        <Stack spacing={2}>
-          {recentReads.map((entry) => (
-            <Card key={entry.id} sx={{ display: "flex" }}>
-              {entry.book.coverUrl ? (
-                <CardMedia
-                  component="img"
-                  sx={{ width: 80 }}
-                  image={entry.book.coverUrl}
-                  alt={entry.book.title}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: 80,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "grey.100",
-                  }}
-                >
-                  <MenuBookIcon sx={{ fontSize: 40, color: "grey.400" }} />
-                </Box>
-              )}
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {entry.book.title}
-                </Typography>
-                {entry.book.author && (
-                  <Typography variant="body2" color="text.secondary">
-                    {entry.book.author}
-                  </Typography>
-                )}
-                <Box sx={{ mt: 1, display: "flex", gap: 1, alignItems: "center" }}>
-                  <Chip
-                    icon={formatIcons[entry.format]}
-                    label={entry.format.toLowerCase()}
-                    size="small"
-                    variant="outlined"
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(entry.createdAt).toLocaleDateString()}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
+        <FeedList entries={entries} />
       )}
     </Container>
   );

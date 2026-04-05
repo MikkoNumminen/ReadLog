@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { Format } from "@/generated/prisma/client";
 import { searchBooks, BookSearchResult } from "@/lib/openlibrary";
 import { searchGoogleBooks } from "@/lib/googlebooks";
+import { fetchBookDetails, BookDetails } from "@/lib/bookdetails";
 
 function normalize(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -154,6 +155,13 @@ export async function deleteReadEntry(entryId: string) {
   await prisma.readEntry.delete({ where: { id: entryId } });
 
   return { success: true };
+}
+
+export async function getBookDetails(
+  title: string,
+  author: string | null,
+): Promise<BookDetails | null> {
+  return fetchBookDetails(title, author);
 }
 
 export async function getRecentPublicReads() {
