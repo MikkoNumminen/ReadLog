@@ -142,6 +142,20 @@ export async function updateReadEntry(
   return { success: true };
 }
 
+export async function deleteReadEntry(entryId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  const entry = await prisma.readEntry.findUnique({
+    where: { id: entryId },
+  });
+  if (!entry || entry.userId !== session.user.id) throw new Error("Not found");
+
+  await prisma.readEntry.delete({ where: { id: entryId } });
+
+  return { success: true };
+}
+
 export async function getRecentPublicReads() {
   return prisma.readEntry.findMany({
     take: 20,

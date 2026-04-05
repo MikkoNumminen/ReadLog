@@ -27,7 +27,8 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import TabletIcon from "@mui/icons-material/Tablet";
 import EditIcon from "@mui/icons-material/Edit";
-import { updateReadEntry } from "@/lib/actions";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { updateReadEntry, deleteReadEntry } from "@/lib/actions";
 
 const formatIcons = {
   BOOK: <MenuBookIcon fontSize="small" />,
@@ -258,6 +259,7 @@ function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void 
     new Date(entry.finishedAt).toISOString().split("T")[0],
   );
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const hasChanges =
     title !== entry.book.title ||
@@ -318,11 +320,40 @@ function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void 
           fullWidth
         />
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" disabled={saving || !hasChanges}>
-          {saving ? "Saving..." : "Save"}
-        </Button>
+      <DialogActions sx={{ justifyContent: "space-between" }}>
+        {confirmDelete ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" color="error">
+              Delete this entry?
+            </Typography>
+            <Button
+              color="error"
+              size="small"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                await deleteReadEntry(entry.id);
+                router.refresh();
+                onClose();
+              }}
+            >
+              Yes, delete
+            </Button>
+            <Button size="small" onClick={() => setConfirmDelete(false)}>
+              No
+            </Button>
+          </Box>
+        ) : (
+          <IconButton color="error" size="small" onClick={() => setConfirmDelete(true)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        )}
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={saving || !hasChanges}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );
