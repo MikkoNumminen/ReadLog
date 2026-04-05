@@ -1,0 +1,132 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Container,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  ToggleButtonGroup,
+  ToggleButton,
+  TextField,
+  Alert,
+} from "@mui/material";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import HeadphonesIcon from "@mui/icons-material/Headphones";
+import TabletIcon from "@mui/icons-material/Tablet";
+import BookSearch from "@/components/BookSearch";
+import { BookSearchResult } from "@/lib/openlibrary";
+import { logBook } from "@/lib/actions";
+
+export default function LogBookPage() {
+  const router = useRouter();
+  const [selected, setSelected] = useState<BookSearchResult | null>(null);
+  const [format, setFormat] = useState<"BOOK" | "AUDIOBOOK" | "EBOOK">("BOOK");
+  const [finishedAt, setFinishedAt] = useState(new Date().toISOString().split("T")[0]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    if (!selected) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await logBook(
+        selected.openLibraryId,
+        selected.title,
+        selected.author,
+        selected.coverUrl,
+        selected.pageCount,
+        selected.firstPublishYear,
+        format,
+        finishedAt,
+      );
+      router.push("/library");
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Log a book
+      </Typography>
+
+      {!selected ? (
+        <BookSearch onSelect={setSelected} />
+      ) : (
+        <Box>
+          <Card sx={{ display: "flex", mb: 3 }}>
+            {selected.coverUrl && (
+              <CardMedia
+                component="img"
+                sx={{ width: 100 }}
+                image={selected.coverUrl}
+                alt={selected.title}
+              />
+            )}
+            <CardContent>
+              <Typography variant="h6">{selected.title}</Typography>
+              <Typography color="text.secondary">{selected.author}</Typography>
+              {selected.firstPublishYear && (
+                <Typography variant="body2" color="text.secondary">
+                  {selected.firstPublishYear}
+                </Typography>
+              )}
+              <Button size="small" onClick={() => setSelected(null)} sx={{ mt: 1 }}>
+                Change book
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Format
+          </Typography>
+          <ToggleButtonGroup
+            value={format}
+            exclusive
+            onChange={(_, v) => v && setFormat(v)}
+            fullWidth
+            sx={{ mb: 3 }}
+          >
+            <ToggleButton value="BOOK">
+              <MenuBookIcon sx={{ mr: 1 }} /> Book
+            </ToggleButton>
+            <ToggleButton value="AUDIOBOOK">
+              <HeadphonesIcon sx={{ mr: 1 }} /> Audiobook
+            </ToggleButton>
+            <ToggleButton value="EBOOK">
+              <TabletIcon sx={{ mr: 1 }} /> E-book
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <TextField
+            label="Finished on"
+            type="date"
+            value={finishedAt}
+            onChange={(e) => setFinishedAt(e.target.value)}
+            fullWidth
+            sx={{ mb: 3 }}
+          />
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Button variant="contained" fullWidth size="large" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save to library"}
+          </Button>
+        </Box>
+      )}
+    </Container>
+  );
+}
