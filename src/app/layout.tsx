@@ -16,6 +16,18 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "ReadLog",
   description: "Track books and audiobooks you've read",
+  metadataBase: new URL("https://read-log-pi.vercel.app"),
+  openGraph: {
+    title: "ReadLog",
+    description: "Track books and audiobooks you've read",
+    siteName: "ReadLog",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ReadLog",
+    description: "Track books and audiobooks you've read",
+  },
 };
 
 export default function RootLayout({
