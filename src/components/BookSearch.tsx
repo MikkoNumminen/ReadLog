@@ -11,47 +11,72 @@ import {
   CircularProgress,
   Typography,
   Box,
+  Stack,
+  Button,
 } from "@mui/material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { searchBooksAction } from "@/lib/actions";
 import { BookSearchResult } from "@/lib/openlibrary";
+
+const INITIAL_SHOW = 10;
 
 interface BookSearchProps {
   onSelect: (book: BookSearchResult) => void;
 }
 
 export default function BookSearch({ onSelect }: BookSearchProps) {
-  const [query, setQuery] = useState("");
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
+    const query = [title.trim(), author.trim()].filter(Boolean).join(" ");
+    if (!query) return;
     setLoading(true);
     setSearched(true);
+    setShowAll(false);
     try {
       const books = await searchBooksAction(query);
       setResults(books);
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [title, author]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  const visibleResults = showAll ? results : results.slice(0, INITIAL_SHOW);
+  const hasMore = results.length > INITIAL_SHOW && !showAll;
 
   return (
     <Box>
-      <TextField
-        fullWidth
-        label="Search for a book"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        slotProps={{
-          input: {
-            endAdornment: loading ? <CircularProgress size={20} /> : null,
-          },
-        }}
-      />
+      <Stack spacing={2}>
+        <TextField
+          fullWidth
+          label="Book title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
+          slotProps={{
+            input: {
+              endAdornment: loading ? <CircularProgress size={20} /> : null,
+            },
+          }}
+        />
+        <TextField
+          fullWidth
+          label="Author (optional)"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          onKeyDown={handleKeyDown}
+          size="small"
+        />
+      </Stack>
 
       {searched && results.length === 0 && !loading && (
         <Typography sx={{ mt: 2 }} color="text.secondary">
@@ -60,7 +85,7 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
       )}
 
       <List>
-        {results.map((book) => (
+        {visibleResults.map((book) => (
           <ListItemButton key={book.openLibraryId} onClick={() => onSelect(book)}>
             <ListItemAvatar>
               {book.coverUrl ? (
@@ -72,12 +97,18 @@ export default function BookSearch({ onSelect }: BookSearchProps) {
               )}
             </ListItemAvatar>
             <ListItemText
-              primary={book.title}
+              primary={book.subtitle ? `${book.title} — ${book.subtitle}` : book.title}
               secondary={[book.author, book.firstPublishYear].filter(Boolean).join(" · ")}
             />
           </ListItemButton>
         ))}
       </List>
+
+      {hasMore && (
+        <Button fullWidth onClick={() => setShowAll(true)}>
+          Show {results.length - INITIAL_SHOW} more results
+        </Button>
+      )}
     </Box>
   );
 }

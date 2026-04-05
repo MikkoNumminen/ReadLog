@@ -4,6 +4,7 @@ interface GoogleBooksVolume {
   id: string;
   volumeInfo: {
     title: string;
+    subtitle?: string;
     authors?: string[];
     publishedDate?: string;
     pageCount?: number;
@@ -12,6 +13,9 @@ interface GoogleBooksVolume {
       smallThumbnail?: string;
     };
     industryIdentifiers?: { type: string; identifier: string }[];
+    seriesInfo?: {
+      bookDisplayNumber?: string;
+    };
   };
 }
 
@@ -21,7 +25,7 @@ export async function searchGoogleBooks(query: string): Promise<BookSearchResult
 
   const params = new URLSearchParams({
     q: query,
-    maxResults: "10",
+    maxResults: "15",
     key: apiKey,
   });
 
@@ -31,14 +35,23 @@ export async function searchGoogleBooks(query: string): Promise<BookSearchResult
   const data = await res.json();
   const items: GoogleBooksVolume[] = data.items ?? [];
 
-  return items.map((item) => ({
-    openLibraryId: `google:${item.id}`,
-    title: item.volumeInfo.title,
-    author: item.volumeInfo.authors?.[0] ?? null,
-    firstPublishYear: item.volumeInfo.publishedDate
-      ? parseInt(item.volumeInfo.publishedDate.slice(0, 4), 10) || null
-      : null,
-    pageCount: item.volumeInfo.pageCount ?? null,
-    coverUrl: item.volumeInfo.imageLinks?.thumbnail?.replace("http:", "https:") ?? null,
-  }));
+  return items.map((item) => {
+    const v = item.volumeInfo;
+    let subtitle = v.subtitle ?? null;
+
+    // If seriesInfo exists, build a series label
+    if (v.seriesInfo?.bookDisplayNumber) {
+      subtitle = `Book ${v.seriesInfo.bookDisplayNumber}${subtitle ? ` — ${subtitle}` : ""}`;
+    }
+
+    return {
+      openLibraryId: `google:${item.id}`,
+      title: v.title,
+      subtitle,
+      author: v.authors?.[0] ?? null,
+      firstPublishYear: v.publishedDate ? parseInt(v.publishedDate.slice(0, 4), 10) || null : null,
+      pageCount: v.pageCount ?? null,
+      coverUrl: v.imageLinks?.thumbnail?.replace("http:", "https:") ?? null,
+    };
+  });
 }
