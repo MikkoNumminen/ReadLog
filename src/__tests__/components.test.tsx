@@ -26,22 +26,26 @@ jest.mock("@/lib/actions", () => ({
   searchBooksAction: jest.fn(),
   checkIfRead: jest.fn(),
   updateReadEntry: jest.fn(),
+  getBookDetails: jest.fn(),
 }));
 
 import React from "react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { searchBooksAction, checkIfRead, updateReadEntry } from "@/lib/actions";
+import { searchBooksAction, checkIfRead, updateReadEntry, getBookDetails } from "@/lib/actions";
 import NavBar from "@/components/NavBar";
 import Providers from "@/components/Providers";
 import BookSearch from "@/components/BookSearch";
 import LibrarySearch from "@/components/LibrarySearch";
 import LibraryView from "@/components/LibraryView";
+import FeedList from "@/components/FeedList";
+import BookDetailDialog from "@/components/BookDetailDialog";
 
 const mockUseSession = useSession as jest.Mock;
 const mockSearchBooks = searchBooksAction as jest.Mock;
 const mockCheckIfRead = checkIfRead as jest.Mock;
 const mockUpdateReadEntry = updateReadEntry as jest.Mock;
+const mockGetBookDetails = getBookDetails as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -427,5 +431,211 @@ describe("LibraryView", () => {
     });
 
     expect(mockUpdateReadEntry).toHaveBeenCalledWith("e1", { finishedAt: "2024-06-01" });
+  });
+});
+
+describe("FeedList", () => {
+  const entries = [
+    {
+      id: "e1",
+      format: "AUDIOBOOK" as const,
+      createdAt: "2024-01-15T00:00:00.000Z",
+      book: { title: "Test Book", author: "Author", coverUrl: "https://cover.jpg" },
+    },
+    {
+      id: "e2",
+      format: "BOOK" as const,
+      createdAt: "2024-02-15T00:00:00.000Z",
+      book: { title: "No Cover Book", author: null, coverUrl: null },
+    },
+  ];
+
+  it("renders feed entries with cover", () => {
+    render(<FeedList entries={entries} />);
+    expect(screen.getByText("Test Book")).toBeTruthy();
+    expect(screen.getByText("Author")).toBeTruthy();
+  });
+
+  it("renders entries without cover", () => {
+    render(<FeedList entries={entries} />);
+    expect(screen.getByText("No Cover Book")).toBeTruthy();
+  });
+
+  it("opens detail dialog when entry clicked", async () => {
+    mockGetBookDetails.mockResolvedValueOnce({
+      title: "Test Book",
+      authors: ["Author"],
+      description: "A great book",
+      categories: ["Fiction"],
+      publisher: "Publisher",
+      publishedDate: "2024",
+      pageCount: 300,
+      coverUrl: "https://cover.jpg",
+      language: "en",
+      previewLink: null,
+      infoLink: "https://books.google.com/test",
+    });
+
+    render(<FeedList entries={entries} />);
+    fireEvent.click(screen.getByText("Test Book"));
+
+    await waitFor(() => {
+      expect(screen.getByText("A great book")).toBeTruthy();
+    });
+  });
+});
+
+describe("BookDetailDialog", () => {
+  const fullDetails = {
+    title: "Test Book",
+    authors: ["Author 1", "Author 2"],
+    description: "<p>A great book</p>",
+    categories: ["Fiction", "Sci-Fi"],
+    publisher: "Big Publisher",
+    publishedDate: "2024-01-01",
+    pageCount: 350,
+    coverUrl: "https://cover.jpg",
+    language: "en",
+    previewLink: null,
+    infoLink: "https://books.google.com/test",
+  };
+
+  it("shows loading state", () => {
+    mockGetBookDetails.mockReturnValue(new Promise(() => {})); // never resolves
+    render(
+      <BookDetailDialog
+        open={true}
+        onClose={jest.fn()}
+        title="Test"
+        author="Author"
+        coverUrl={null}
+      />,
+    );
+    expect(screen.getByRole("progressbar")).toBeTruthy();
+  });
+
+  it("shows full details", async () => {
+    mockGetBookDetails.mockResolvedValueOnce(fullDetails);
+    render(
+      <BookDetailDialog
+        open={true}
+        onClose={jest.fn()}
+        title="Test Book"
+        author="Author 1"
+        coverUrl={null}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Author 1, Author 2")).toBeTruthy();
+      expect(screen.getByText("Published: 2024-01-01")).toBeTruthy();
+      expect(screen.getByText("Publisher: Big Publisher")).toBeTruthy();
+      expect(screen.getByText("350 pages")).toBeTruthy();
+      expect(screen.getByText("Language: EN")).toBeTruthy();
+      expect(screen.getByText("Fiction")).toBeTruthy();
+      expect(screen.getByText("Sci-Fi")).toBeTruthy();
+      expect(screen.getByText("A great book")).toBeTruthy();
+      expect(screen.getByText(/More on Google Books/)).toBeTruthy();
+    });
+  });
+
+  it("shows no details message when null", async () => {
+    mockGetBookDetails.mockResolvedValueOnce(null);
+    render(
+      <BookDetailDialog
+        open={true}
+        onClose={jest.fn()}
+        title="Unknown"
+        author={null}
+        coverUrl={null}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("No details available for this book.")).toBeTruthy();
+    });
+  });
+
+  it("shows details with no optional fields", async () => {
+    mockGetBookDetails.mockResolvedValueOnce({
+      ...fullDetails,
+      authors: [],
+      categories: [],
+      publisher: null,
+      publishedDate: null,
+      pageCount: null,
+      coverUrl: null,
+      language: null,
+      description: null,
+      infoLink: null,
+    });
+
+    render(
+      <BookDetailDialog
+        open={true}
+        onClose={jest.fn()}
+        title="Minimal"
+        author={null}
+        coverUrl={null}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Minimal")).toBeTruthy();
+    });
+    expect(screen.queryByText("Published:")).toBeNull();
+    expect(screen.queryByText("Publisher:")).toBeNull();
+    expect(screen.queryByText("pages")).toBeNull();
+    expect(screen.queryByText("Language:")).toBeNull();
+    expect(screen.queryByText(/More on Google Books/)).toBeNull();
+  });
+
+  it("uses fallback coverUrl when details has none", async () => {
+    mockGetBookDetails.mockResolvedValueOnce({
+      ...fullDetails,
+      coverUrl: null,
+    });
+
+    render(
+      <BookDetailDialog
+        open={true}
+        onClose={jest.fn()}
+        title="Test"
+        author="Author"
+        coverUrl="https://fallback.jpg"
+      />,
+    );
+
+    await waitFor(() => {
+      const img = screen.getByRole("img", { name: "Test" }) as HTMLImageElement;
+      expect(img.src).toBe("https://fallback.jpg");
+    });
+  });
+
+  it("does not render content when closed", () => {
+    render(
+      <BookDetailDialog
+        open={false}
+        onClose={jest.fn()}
+        title="Test"
+        author={null}
+        coverUrl={null}
+      />,
+    );
+    expect(mockGetBookDetails).not.toHaveBeenCalled();
+  });
+
+  it("calls onClose when close button clicked", async () => {
+    mockGetBookDetails.mockResolvedValueOnce(null);
+    const onClose = jest.fn();
+    render(
+      <BookDetailDialog open={true} onClose={onClose} title="Test" author={null} coverUrl={null} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Close")).toBeTruthy();
+    });
+    fireEvent.click(screen.getByText("Close"));
+    expect(onClose).toHaveBeenCalled();
   });
 });
