@@ -25,3 +25,5 @@ jobs:
       - run: npx eslint src/
 
       - run: npx tsc --noEmit
+
+      - run: npx jest --coverage
