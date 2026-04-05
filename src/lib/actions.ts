@@ -164,6 +164,27 @@ export async function getBookDetails(
   return fetchBookDetails(title, author);
 }
 
+export async function getAccountStats() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const totalBooks = await prisma.readEntry.count({
+    where: { userId: session.user.id },
+  });
+
+  const formatCounts = await prisma.readEntry.groupBy({
+    by: ["format"],
+    where: { userId: session.user.id },
+    _count: true,
+  });
+
+  return {
+    user: { name: session.user.name, email: session.user.email, image: session.user.image },
+    totalBooks,
+    formats: Object.fromEntries(formatCounts.map((f) => [f.format, f._count])),
+  };
+}
+
 export async function getRecentPublicReads() {
   return prisma.readEntry.findMany({
     take: 20,
