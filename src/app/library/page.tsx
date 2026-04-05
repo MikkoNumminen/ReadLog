@@ -11,6 +11,17 @@ export default async function LibraryPage() {
 
   const entries = await getMyBooks();
 
+  const serialized = entries.map((entry) => ({
+    id: entry.id,
+    format: entry.format,
+    finishedAt: entry.finishedAt.toISOString(),
+    book: {
+      title: entry.book.title,
+      author: entry.book.author,
+      coverUrl: entry.book.coverUrl,
+    },
+  }));
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
@@ -19,12 +30,12 @@ export default async function LibraryPage() {
 
       <LibrarySearch />
 
-      {entries.length === 0 ? (
+      {serialized.length === 0 ? (
         <Typography color="text.secondary" sx={{ mt: 4, textAlign: "center" }}>
           No books logged yet. Start by logging your first book!
         </Typography>
       ) : (
-        <LibraryView entries={entries} />
+        <LibraryView entries={serialized} />
       )}
     </Container>
   );

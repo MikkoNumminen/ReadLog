@@ -41,7 +41,7 @@ type FormatType = "BOOK" | "AUDIOBOOK" | "EBOOK";
 interface ReadEntry {
   id: string;
   format: FormatType;
-  finishedAt: Date;
+  finishedAt: string | Date;
   book: {
     title: string;
     author: string | null;

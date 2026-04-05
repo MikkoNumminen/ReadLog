@@ -1,7 +1,11 @@
+"use client";
+
 import { Container, Typography, Button } from "@mui/material";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function NotFound() {
+  const router = useRouter();
+
   return (
     <Container maxWidth="sm" sx={{ py: 8, textAlign: "center" }}>
       <Typography variant="h4" gutterBottom>
@@ -10,7 +14,7 @@ export default function NotFound() {
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         The page you&apos;re looking for doesn&apos;t exist.
       </Typography>
-      <Button variant="contained" component={Link} href="/">
+      <Button variant="contained" onClick={() => router.push("/")}>
         Go home
       </Button>
     </Container>
