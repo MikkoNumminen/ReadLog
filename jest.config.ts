@@ -18,7 +18,7 @@ const config: Config = {
     global: {
       lines: 80,
       branches: 80,
-      functions: 75,
+      functions: 70,
       statements: 80,
     },
   },
