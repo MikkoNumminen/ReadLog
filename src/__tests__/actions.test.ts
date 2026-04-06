@@ -2,6 +2,12 @@
  * @jest-environment node
  */
 
+jest.mock("next/cache", () => ({
+  unstable_cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
+  updateTag: jest.fn(),
+  revalidateTag: jest.fn(),
+}));
+
 jest.mock("@/lib/db", () => ({
   prisma: {
     book: { upsert: jest.fn(), update: jest.fn() },

@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache, updateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { Format } from "@/generated/prisma/client";
@@ -82,18 +83,27 @@ export async function logBook(
     },
   });
 
+  updateTag("public-feed");
+  updateTag("my-books");
   return { success: true };
 }
+
+const getCachedMyBooks = unstable_cache(
+  async (userId: string) =>
+    prisma.readEntry.findMany({
+      where: { userId },
+      include: { book: true },
+      orderBy: { finishedAt: "desc" },
+    }),
+  ["my-books"],
+  { revalidate: 300, tags: ["my-books"] },
+);
 
 export async function getMyBooks() {
   const session = await auth();
   if (!session?.user?.id) return [];
 
-  return prisma.readEntry.findMany({
-    where: { userId: session.user.id },
-    include: { book: true },
-    orderBy: { finishedAt: "desc" },
-  });
+  return getCachedMyBooks(session.user.id);
 }
 
 export async function checkIfRead(query: string) {
@@ -140,6 +150,8 @@ export async function updateReadEntry(
     });
   }
 
+  updateTag("public-feed");
+  updateTag("my-books");
   return { success: true };
 }
 
@@ -154,41 +166,63 @@ export async function deleteReadEntry(entryId: string) {
 
   await prisma.readEntry.delete({ where: { id: entryId } });
 
+  updateTag("public-feed");
+  updateTag("my-books");
   return { success: true };
 }
+
+const cachedFetchBookDetails = unstable_cache(
+  async (title: string, author: string | null) => fetchBookDetails(title, author),
+  ["book-details"],
+  { revalidate: 60 * 60 * 24 * 30, tags: ["book-details"] }, // 30 days
+);
 
 export async function getBookDetails(
   title: string,
   author: string | null,
 ): Promise<BookDetails | null> {
-  return fetchBookDetails(title, author);
+  return cachedFetchBookDetails(title, author);
 }
+
+const getCachedAccountStats = unstable_cache(
+  async (userId: string) => {
+    const totalBooks = await prisma.readEntry.count({ where: { userId } });
+    const formatCounts = await prisma.readEntry.groupBy({
+      by: ["format"],
+      where: { userId },
+      _count: true,
+    });
+    return {
+      totalBooks,
+      formats: Object.fromEntries(formatCounts.map((f) => [f.format, f._count])),
+    };
+  },
+  ["account-stats"],
+  { revalidate: 300, tags: ["my-books"] },
+);
 
 export async function getAccountStats() {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  const totalBooks = await prisma.readEntry.count({
-    where: { userId: session.user.id },
-  });
-
-  const formatCounts = await prisma.readEntry.groupBy({
-    by: ["format"],
-    where: { userId: session.user.id },
-    _count: true,
-  });
-
+  const stats = await getCachedAccountStats(session.user.id);
   return {
     user: { name: session.user.name, email: session.user.email, image: session.user.image },
-    totalBooks,
-    formats: Object.fromEntries(formatCounts.map((f) => [f.format, f._count])),
+    ...stats,
   };
 }
 
+const getCachedRecentPublicReads = unstable_cache(
+  async () =>
+    prisma.readEntry.findMany({
+      take: 20,
+      orderBy: { createdAt: "desc" },
+      include: { book: true },
+    }),
+  ["recent-public-reads"],
+  { revalidate: 60, tags: ["public-feed"] },
+);
+
 export async function getRecentPublicReads() {
-  return prisma.readEntry.findMany({
-    take: 20,
-    orderBy: { createdAt: "desc" },
-    include: { book: true },
-  });
+  return getCachedRecentPublicReads();
 }
