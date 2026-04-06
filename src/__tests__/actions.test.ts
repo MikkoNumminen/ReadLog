@@ -218,9 +218,9 @@ describe("getMyBooks", () => {
     });
   });
 
-  it("returns empty array when not authenticated", async () => {
+  it("returns null when not authenticated", async () => {
     mockAuth.mockResolvedValueOnce(null);
-    expect(await getMyBooks()).toEqual([]);
+    expect(await getMyBooks()).toBeNull();
   });
 });
 

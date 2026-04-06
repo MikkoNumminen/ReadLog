@@ -101,7 +101,7 @@ const getCachedMyBooks = unstable_cache(
 
 export async function getMyBooks() {
   const session = await auth();
-  if (!session?.user?.id) return [];
+  if (!session?.user?.id) return null;
 
   return getCachedMyBooks(session.user.id);
 }

@@ -3,7 +3,6 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import TabletIcon from "@mui/icons-material/Tablet";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { getAccountStats } from "@/lib/actions";
 
 const formatLabels: Record<string, { label: string; icon: React.ReactElement }> = {
@@ -13,9 +12,6 @@ const formatLabels: Record<string, { label: string; icon: React.ReactElement }> 
 };
 
 export default async function AccountPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/signin?callbackUrl=/account");
-
   const stats = await getAccountStats();
   if (!stats) redirect("/signin?callbackUrl=/account");
 

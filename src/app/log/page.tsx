@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Container,
   Typography,
@@ -24,7 +25,15 @@ import { logBook } from "@/lib/actions";
 
 export default function LogBookPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [selected, setSelected] = useState<BookSearchResult | null>(null);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin?callbackUrl=/log");
+    }
+  }, [status, router]);
+
   const [editedTitle, setEditedTitle] = useState("");
   const [editedAuthor, setEditedAuthor] = useState("");
   const [format, setFormat] = useState<"BOOK" | "AUDIOBOOK" | "EBOOK">("BOOK");
@@ -54,6 +63,10 @@ export default function LogBookPage() {
       setSaving(false);
     }
   };
+
+  if (status !== "authenticated") {
+    return null;
+  }
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>

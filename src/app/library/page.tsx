@@ -1,15 +1,12 @@
 import { Container, Typography } from "@mui/material";
 import { getMyBooks } from "@/lib/actions";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import LibrarySearch from "@/components/LibrarySearch";
 import LibraryView from "@/components/LibraryView";
 
 export default async function LibraryPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/signin?callbackUrl=/library");
-
   const entries = await getMyBooks();
+  if (entries === null) redirect("/signin?callbackUrl=/library");
 
   const serialized = entries.map((entry) => ({
     id: entry.id,
