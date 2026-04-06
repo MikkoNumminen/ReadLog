@@ -11,7 +11,7 @@ export default async function LibraryPage() {
   const serialized = entries.map((entry) => ({
     id: entry.id,
     format: entry.format,
-    finishedAt: entry.finishedAt.toISOString(),
+    finishedAt: new Date(entry.finishedAt).toISOString(),
     rating: entry.rating,
     book: {
       title: entry.book.title,

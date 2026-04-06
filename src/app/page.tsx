@@ -8,7 +8,7 @@ export default async function Home() {
   const entries = recentReads.map((entry) => ({
     id: entry.id,
     format: entry.format,
-    createdAt: entry.createdAt.toISOString(),
+    createdAt: new Date(entry.createdAt).toISOString(),
     rating: entry.rating,
     book: {
       title: entry.book.title,
