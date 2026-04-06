@@ -57,6 +57,7 @@ export async function logBook(
   firstPublishYear: number | null,
   format: Format,
   finishedAt: string,
+  rating: number | null,
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not authenticated");
@@ -80,6 +81,7 @@ export async function logBook(
       bookId: book.id,
       format,
       finishedAt: new Date(finishedAt),
+      rating,
     },
   });
 
@@ -123,7 +125,7 @@ export async function checkIfRead(query: string) {
 
 export async function updateReadEntry(
   entryId: string,
-  data: { title?: string; format?: Format; finishedAt?: string },
+  data: { title?: string; format?: Format; finishedAt?: string; rating?: number | null },
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not authenticated");
@@ -140,12 +142,13 @@ export async function updateReadEntry(
     });
   }
 
-  if (data.format || data.finishedAt) {
+  if (data.format || data.finishedAt || data.rating !== undefined) {
     await prisma.readEntry.update({
       where: { id: entryId },
       data: {
         ...(data.format && { format: data.format }),
         ...(data.finishedAt && { finishedAt: new Date(data.finishedAt) }),
+        ...(data.rating !== undefined && { rating: data.rating }),
       },
     });
   }

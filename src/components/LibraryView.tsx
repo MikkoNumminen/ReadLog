@@ -20,6 +20,7 @@ import {
   TextField,
   ToggleButtonGroup,
   ToggleButton,
+  Rating,
 } from "@mui/material";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -42,6 +43,7 @@ interface ReadEntry {
   id: string;
   format: FormatType;
   finishedAt: string | Date;
+  rating?: number | null;
   book: {
     title: string;
     author: string | null;
@@ -168,6 +170,11 @@ function GridView({
               {entry.book.author}
             </Typography>
           )}
+          {entry.rating != null && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 0.5 }}>
+              <Rating value={entry.rating} readOnly size="small" />
+            </Box>
+          )}
         </Box>
       ))}
     </Box>
@@ -229,6 +236,7 @@ function ListView({
                   {entry.book.author}
                 </Typography>
               )}
+              {entry.rating != null && <Rating value={entry.rating} readOnly size="small" />}
             </Box>
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
               <Chip
@@ -258,13 +266,15 @@ function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void 
   const [finishedAt, setFinishedAt] = useState(
     new Date(entry.finishedAt).toISOString().split("T")[0],
   );
+  const [rating, setRating] = useState<number | null>(entry.rating ?? null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const hasChanges =
     title !== entry.book.title ||
     format !== entry.format ||
-    finishedAt !== new Date(entry.finishedAt).toISOString().split("T")[0];
+    finishedAt !== new Date(entry.finishedAt).toISOString().split("T")[0] ||
+    rating !== (entry.rating ?? null);
 
   const handleSave = async () => {
     if (!hasChanges) {
@@ -276,6 +286,7 @@ function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void 
       ...(title !== entry.book.title && { title }),
       ...(format !== entry.format && { format }),
       ...(finishedAt !== new Date(entry.finishedAt).toISOString().split("T")[0] && { finishedAt }),
+      ...(rating !== (entry.rating ?? null) && { rating }),
     });
     router.refresh();
     onClose();
@@ -318,7 +329,12 @@ function EditDialog({ entry, onClose }: { entry: ReadEntry; onClose: () => void 
           value={finishedAt}
           onChange={(e) => setFinishedAt(e.target.value)}
           fullWidth
+          sx={{ mb: 2 }}
         />
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Rating
+        </Typography>
+        <Rating value={rating} onChange={(_, v) => setRating(v)} size="large" />
       </DialogContent>
       <DialogActions sx={{ justifyContent: "space-between" }}>
         {confirmDelete ? (

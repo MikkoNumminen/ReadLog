@@ -15,6 +15,7 @@ import {
   ToggleButton,
   TextField,
   Alert,
+  Rating,
 } from "@mui/material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
@@ -38,6 +39,7 @@ export default function LogBookPage() {
   const [editedAuthor, setEditedAuthor] = useState("");
   const [format, setFormat] = useState<"BOOK" | "AUDIOBOOK" | "EBOOK">("BOOK");
   const [finishedAt, setFinishedAt] = useState(new Date().toISOString().split("T")[0]);
+  const [rating, setRating] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +57,7 @@ export default function LogBookPage() {
         selected.firstPublishYear,
         format,
         finishedAt,
+        rating,
       );
       router.push("/library");
     } catch {
@@ -153,6 +156,18 @@ export default function LogBookPage() {
             fullWidth
             sx={{ mb: 3 }}
           />
+
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Your rating
+          </Typography>
+          <Box sx={{ mb: 3 }}>
+            <Rating
+              value={rating}
+              onChange={(_, value) => setRating(value)}
+              size="large"
+              precision={1}
+            />
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>

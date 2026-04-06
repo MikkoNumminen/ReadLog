@@ -10,6 +10,7 @@ import {
   Chip,
   Typography,
   Box,
+  Rating,
 } from "@mui/material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
@@ -26,6 +27,7 @@ interface FeedEntry {
   id: string;
   format: "BOOK" | "AUDIOBOOK" | "EBOOK";
   createdAt: string;
+  rating?: number | null;
   book: {
     title: string;
     author: string | null;
@@ -85,6 +87,11 @@ export default function FeedList({ entries }: { entries: FeedEntry[] }) {
                     {new Date(entry.createdAt).toLocaleDateString()}
                   </Typography>
                 </Box>
+                {entry.rating != null && (
+                  <Box sx={{ mt: 0.5 }}>
+                    <Rating value={entry.rating} readOnly size="small" />
+                  </Box>
+                )}
               </CardContent>
             </CardActionArea>
           </Card>

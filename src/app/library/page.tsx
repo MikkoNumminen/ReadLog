@@ -12,6 +12,7 @@ export default async function LibraryPage() {
     id: entry.id,
     format: entry.format,
     finishedAt: entry.finishedAt.toISOString(),
+    rating: entry.rating,
     book: {
       title: entry.book.title,
       author: entry.book.author,

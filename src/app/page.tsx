@@ -9,6 +9,7 @@ export default async function Home() {
     id: entry.id,
     format: entry.format,
     createdAt: entry.createdAt.toISOString(),
+    rating: entry.rating,
     book: {
       title: entry.book.title,
       author: entry.book.author,

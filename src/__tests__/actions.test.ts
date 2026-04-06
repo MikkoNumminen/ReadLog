@@ -160,6 +160,7 @@ describe("logBook", () => {
       2016,
       "AUDIOBOOK",
       "2024-01-15",
+      4,
     );
 
     expect(result).toEqual({ success: true });
@@ -181,6 +182,7 @@ describe("logBook", () => {
         bookId: "book1",
         format: "AUDIOBOOK",
         finishedAt: new Date("2024-01-15"),
+        rating: 4,
       },
     });
   });
@@ -188,14 +190,14 @@ describe("logBook", () => {
   it("throws when not authenticated", async () => {
     mockAuth.mockResolvedValueOnce(null);
     await expect(
-      logBook("/works/OL1", "Test", null, null, null, null, "BOOK", "2024-01-01"),
+      logBook("/works/OL1", "Test", null, null, null, null, "BOOK", "2024-01-01", null),
     ).rejects.toThrow("Not authenticated");
   });
 
   it("throws when session has no user id", async () => {
     mockAuth.mockResolvedValueOnce({ user: {}, expires: "" });
     await expect(
-      logBook("/works/OL1", "Test", null, null, null, null, "BOOK", "2024-01-01"),
+      logBook("/works/OL1", "Test", null, null, null, null, "BOOK", "2024-01-01", null),
     ).rejects.toThrow("Not authenticated");
   });
 });
