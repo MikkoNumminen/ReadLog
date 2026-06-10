@@ -8,6 +8,7 @@ Track books and audiobooks you've read.
 - **Multi-source search** — searches Open Library and Google Books in parallel, deduplicates results
 - **My Library** — browse and search your reading history, grid/list view, edit entries
 - **"Have I read this?"** — quick search against your own library
+- **Ratings** — rate books 0–5 stars when logging or editing
 - **Public feed** — anonymous feed of recently logged books on the homepage
 - **Google OAuth** — sign in with your Google account
 
@@ -26,7 +27,7 @@ Track books and audiobooks you've read.
 npm install
 cp .env.example .env    # fill in your values
 npx prisma generate
-npx prisma db push      # or run migration SQL manually for shared databases
+npx prisma db push      # local/dedicated databases only — on a shared database use `prisma db execute` with migration SQL
 npm run dev
 ```
 
@@ -37,7 +38,7 @@ npm test              # run all tests
 npm run test:coverage # run with coverage report
 ```
 
-68 tests across 4 suites covering API integrations, server actions, and components.
+90 tests across 5 suites covering API integrations, server actions, and components.
 
 ## Quality gates
 
