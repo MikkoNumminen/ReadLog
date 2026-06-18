@@ -44,7 +44,7 @@ npm run test:coverage # run with coverage report
 
 - **Pre-commit** — ESLint + Prettier via lint-staged
 - **Pre-push** — TypeScript type-check, ESLint, and full test suite
-- **CI** — GitHub Actions runs lint, type-check, and tests with coverage on every push/PR
+- **CI** — GitHub Actions runs lint, type-check, and tests with coverage on pushes to `master` and on pull requests targeting `master`
 
 ## External APIs
 
