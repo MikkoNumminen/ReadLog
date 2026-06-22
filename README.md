@@ -2,6 +2,8 @@
 
 Track books and audiobooks you've read.
 
+**Live app:** https://read-log-pi.vercel.app/
+
 ## Features
 
 - **Log books** — search by title/author, select, and save with format (book, audiobook, e-book) and finish date
