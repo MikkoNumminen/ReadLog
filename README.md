@@ -2,7 +2,7 @@
 
 Track books and audiobooks you've read.
 
-**Live app:** https://read-log-pi.vercel.app/
+**Live app:** https://mikkonumminen.dev/readlog
 
 ## Features
 
